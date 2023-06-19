@@ -1,0 +1,168 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Models\blogs;
+use Mail;
+use Session;
+
+
+class Blog extends Controller
+{
+    
+      public function index(Request $request){
+      return view('addblog');
+         }
+    
+    
+    public function add(Request $request){
+        // $blog = DB::table('blog')->get();
+      return view('addblog');
+    }
+    
+     public function insertblog(Request $r){
+         
+          $validated = $r->validate([
+            'firstNameinput' => 'required',
+            'lastNameinput' => 'required',
+             'image' => 'required|mimes:webp',
+            'compnayNameinput' => 'required',
+             ]);
+             
+             $imageName = time().'.'.$r->image->extension();  
+             $r->image->move(public_path('images'), $imageName);
+         
+          $obt =  new blogs();
+          $obt->name = $r->firstNameinput;
+          $obt->email = $r->lastNameinput;
+          $obt->image = $imageName;
+          $obt->company = $r->compnayNameinput;
+          $obt->save();
+          
+        if($obt){
+            
+           
+            
+              return redirect('viewblog');
+              
+        }
+         
+      
+    }
+    
+    
+    public function viewblog(){
+        
+        $data = blogs::paginate(10);
+        
+        if($data){
+        return view('viewblog',compact('data'));
+        }
+    }
+    
+    
+    public function deleteblog($id){
+        
+        $delete = Db::table('blog')->where('id',$id)->delete();
+         if($delete){
+              return redirect('viewblog');
+              
+        }
+       
+    }
+    
+    
+    
+    public function editblog(Request $r ,$id){
+    if($id){
+    $fatch = DB::table('blog')->where('id', $id)->first();
+    
+    return view('editblog',compact('fatch'));
+    }
+    
+
+    }
+    
+    
+    public function editprocessblog(Request $r){
+        
+        $fatch = DB::table('blog')->where('id',$r->id)->get();
+        
+       
+        if(isset($r->image)){
+                  $image = time().'.'.$r->image->extension();
+            $r->image->move(public_path('images'), $image);
+        }else{
+            $image = $r->oldimage;
+        }
+        
+      
+        
+        
+        $update = Db::table('blog')->where('id',$r->id)->update(array(
+            'name' => $r->firstNameinput,
+            'email' => $r->lastNameinput,
+            'image' => $image,
+            'company' => $r->compnayNameinput
+        
+        ));
+        
+        if(isset($update)){
+            return redirect('/viewblog');
+        }
+    }
+    
+    public function emailtest(){
+        
+         $data = array('name'=>"Virat Gandhi");
+   
+              Mail::send('mail/mailtest', $data, function($message) {
+                 $message->to('vermajatin493@gmail.com', 'Tutorials Point')->subject
+                    ('Laravel Basic Testing Mail');
+                 $message->from('xyz@gmail.com','Virat Gandhi');
+              });
+            //   echo "Basic Email Sent. Check your inbox.";
+    }
+    
+    
+    
+    
+    public function ajaxinsert(){
+        
+        return view('ajaxinsert');
+    }
+    
+    public function ajaxpost(Request $r){
+        
+         $obt =  new blogs();
+          $obt->name = $r->firstNameinput;
+          $obt->email = $r->lastNameinput;
+        //   $obt->image = $imageName;
+          $obt->company = $r->compnayNameinput;
+          $obt->save();
+          
+          return ['msg'=>'inserted'];
+    }
+    
+    
+    public function logout(Request $r){
+       Session::flush();
+      return redirect('/login');
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+}
